@@ -55,7 +55,7 @@ import {
 import { copyAssetHierarchy } from '../../utils/copy-asset-hierarchy';
 import { moveAssetToParent } from '../../utils/move-asset';
 import { SpAssetRoutes } from '../../assets.breadcrumb';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { IdGeneratorService } from '../../../core-services/id-generator/id-generator.service';
 import { UserPrivilege } from '../../../core/auth/user-privilege.enum';
 import { MatDialog } from '@angular/material/dialog';
@@ -88,6 +88,7 @@ type ManageableAsset = SpAssetModel & {
     styleUrls: ['./asset-overview.component.scss'],
     changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
+        RouterLink,
         SpBasicViewComponent,
         FlexDirective,
         LayoutAlignDirective,

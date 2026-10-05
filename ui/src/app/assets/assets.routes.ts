@@ -34,6 +34,17 @@ export const ASSET_ROUTES: Routes = [
                 pathMatch: 'full',
             },
             {
+                path: 'design-overview',
+                loadComponent: () =>
+                    import('../design/asset-overview/asset-overview-exploration.component').then(
+                        m => m.AssetOverviewExplorationComponent,
+                    ),
+                data: {
+                    privileges: [UserPrivilege.PRIVILEGE_READ_ASSETS],
+                },
+                canActivate: [PageAuthGuard],
+            },
+            {
                 path: 'overview',
                 component: SpAssetOverviewComponent,
             },

@@ -1,0 +1,174 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+:host {
+    display: block;
+    height: 100%;
+    min-width: 0;
+}
+
+.concept-content {
+    display: block;
+    margin-top: var(--space-lg);
+}
+
+.asset-card {
+    height: 100%;
+    box-shadow: none;
+    border-color: var(--mat-sys-outline-variant);
+    border-radius: var(--radius-md);
+    background: var(--mat-sys-surface);
+    transition: border-color 160ms ease;
+}
+
+.asset-card:hover,
+.asset-card:focus-within {
+    border-color: var(--mat-sys-primary);
+}
+
+.asset-card-content {
+    padding: var(--space-lg);
+}
+
+.asset-card-content:first-child,
+.asset-card-content:last-child {
+    padding-block: var(--space-lg);
+}
+
+.asset-card-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--radius-sm);
+    background: var(--mat-sys-surface-container);
+    color: var(--mat-sys-primary);
+}
+
+.asset-card-identity {
+    min-width: 0;
+}
+
+.asset-card-title {
+    margin: 0;
+    font-family: var(--font-emphasized);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-normal);
+}
+
+.asset-card-title .asset-link {
+    text-decoration: none;
+}
+
+.asset-card-title .asset-link:hover,
+.asset-card-title .asset-link:focus-visible {
+    text-decoration: underline;
+}
+
+.asset-card-site {
+    margin-top: var(--space-2xs);
+    color: var(--mat-sys-on-surface-variant);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-normal);
+}
+
+.asset-card-site mat-icon {
+    width: 1rem;
+    height: 1rem;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.supporting-text {
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.asset-card-description {
+    margin: var(--space-md) 0 0;
+    font-size: var(--font-size-md);
+    line-height: var(--line-height-relaxed);
+    color: var(--mat-sys-on-surface-variant);
+    white-space: pre-line;
+}
+
+.asset-link {
+    color: var(--mat-sys-primary);
+    font-weight: 600;
+    text-underline-offset: 0.2em;
+}
+
+.asset-link:focus-visible,
+.table-scroll:focus-visible {
+    outline: 3px solid var(--mat-sys-primary);
+    outline-offset: 3px;
+}
+
+.asset-link,
+mat-card-content,
+td,
+mat-panel-title,
+.supporting-text {
+    overflow-wrap: anywhere;
+}
+
+.table-scroll {
+    overflow-x: auto;
+}
+
+sp-table {
+    display: block;
+    min-width: 36rem;
+}
+
+.site-groups mat-expansion-panel {
+    box-shadow: none;
+    border: 1px solid var(--mat-sys-outline-variant);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--space-sm);
+}
+
+mat-panel-description {
+    flex-grow: 0;
+    white-space: nowrap;
+}
+
+.site-assets {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.site-assets li {
+    padding: var(--space-md) 0;
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.site-assets li:last-child {
+    border-bottom: 0;
+}
+
+@media (max-width: 40rem) {
+    .concept-content {
+        margin-top: var(--space-md);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .asset-card {
+        transition: none;
+    }
+}

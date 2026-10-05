@@ -1,0 +1,351 @@
+<!--
+ ~ Licensed to the Apache Software Foundation (ASF) under one or more
+ ~ contributor license agreements.  See the NOTICE file distributed with
+ ~ this work for additional information regarding copyright ownership.
+ ~ The ASF licenses this file to You under the Apache License, Version 2.0
+ ~ (the "License"); you may not use this file except in compliance with
+ ~ the License.  You may obtain a copy of the License at
+ ~
+ ~    http://www.apache.org/licenses/LICENSE-2.0
+ ~
+ ~ Unless required by applicable law or agreed to in writing, software
+ ~ distributed under the License is distributed on an "AS IS" BASIS,
+ ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ ~ See the License for the specific language governing permissions and
+ ~ limitations under the License.
+ ~
+-->
+
+<sp-basic-view [hideNavbar]="true" [padding]="true">
+    <sp-page-header
+        [title]="'Asset overview exploration' | translate"
+        [description]="
+            'Three views of the same assets. Search and navigation filters apply to every concept.'
+                | translate
+        "
+        icon="precision_manufacturing"
+        iconColor="var(--color-primary)"
+    >
+        <a
+            pageActions
+            mat-flat-button
+            class="btn-secondary"
+            routerLink="/assets/overview"
+        >
+            {{ 'Assets' | translate }}
+        </a>
+        <button
+            pageActions
+            mat-icon-button
+            type="button"
+            [disabled]="loading"
+            (click)="loadAssets()"
+            [attr.aria-label]="'Refresh assets' | translate"
+            [matTooltip]="'Refresh assets' | translate"
+        >
+            <mat-icon aria-hidden="true">refresh</mat-icon>
+        </button>
+    </sp-page-header>
+
+    <mat-tab-group
+        class="sp-page-tabs"
+        [mat-stretch-tabs]="false"
+        animationDuration="0ms"
+    >
+        <mat-tab [label]="'Cards' | translate">
+            <ng-template matTabContent>
+                <ng-container *ngTemplateOutlet="controls"></ng-container>
+                @if (!loading && !failed && filteredAssets.length) {
+                    <div
+                        class="concept-content"
+                        fxLayout="row wrap"
+                        fxLayoutGap="var(--space-md) grid"
+                    >
+                        @for (asset of filteredAssets; track asset.elementId) {
+                            <div
+                                fxFlex="33.333"
+                                fxFlex.lt-lg="50"
+                                fxFlex.lt-sm="100"
+                            >
+                                <mat-card
+                                    appearance="outlined"
+                                    class="asset-card"
+                                >
+                                    <mat-card-content
+                                        class="asset-card-content"
+                                    >
+                                        <div
+                                            fxLayout="row"
+                                            fxLayoutAlign="start center"
+                                            fxLayoutGap="var(--space-md)"
+                                        >
+                                            <div
+                                                class="asset-card-icon"
+                                                fxLayoutAlign="center center"
+                                                fxFlex="none"
+                                            >
+                                                <mat-icon aria-hidden="true"
+                                                    >precision_manufacturing</mat-icon
+                                                >
+                                            </div>
+                                            <div
+                                                class="asset-card-identity"
+                                                fxFlex
+                                            >
+                                                <h3 class="asset-card-title">
+                                                    <a
+                                                        class="asset-link"
+                                                        [routerLink]="[
+                                                            '/assets/details',
+                                                            asset.elementId,
+                                                            'view',
+                                                        ]"
+                                                        >{{
+                                                            asset.assetName
+                                                        }}</a
+                                                    >
+                                                </h3>
+                                                <div
+                                                    class="asset-card-site"
+                                                    fxLayout="row"
+                                                    fxLayoutAlign="start center"
+                                                    fxLayoutGap="var(--space-2xs)"
+                                                >
+                                                    <mat-icon aria-hidden="true"
+                                                        >location_on</mat-icon
+                                                    >
+                                                    <span>{{
+                                                        siteLabel(asset) ||
+                                                            ('No site assigned'
+                                                                | translate)
+                                                    }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <p class="asset-card-description">
+                                            {{
+                                                asset.assetDescription ||
+                                                    ('No description'
+                                                        | translate)
+                                            }}
+                                        </p>
+                                    </mat-card-content>
+                                </mat-card>
+                            </div>
+                        }
+                    </div>
+                }
+            </ng-template>
+        </mat-tab>
+        <mat-tab [label]="'Inventory' | translate">
+            <ng-template matTabContent>
+                <ng-container *ngTemplateOutlet="controls"></ng-container>
+                @if (!loading && !failed && filteredAssets.length) {
+                    <div
+                        class="concept-content table-scroll"
+                        tabindex="0"
+                        role="region"
+                        [attr.aria-label]="'Inventory' | translate"
+                    >
+                        <sp-table
+                            [columns]="columns"
+                            [dataSource]="dataSource"
+                            matSort
+                        >
+                            <ng-container matColumnDef="assetName">
+                                <th
+                                    mat-header-cell
+                                    mat-sort-header
+                                    *matHeaderCellDef
+                                >
+                                    {{ 'Asset' | translate }}
+                                </th>
+                                <td mat-cell *matCellDef="let asset">
+                                    <a
+                                        class="asset-link"
+                                        [routerLink]="[
+                                            '/assets/details',
+                                            asset.elementId,
+                                            'view',
+                                        ]"
+                                        >{{ asset.assetName }}</a
+                                    >
+                                </td>
+                            </ng-container>
+                            <ng-container matColumnDef="assetDescription">
+                                <th
+                                    mat-header-cell
+                                    mat-sort-header
+                                    *matHeaderCellDef
+                                >
+                                    {{ 'Description' | translate }}
+                                </th>
+                                <td mat-cell *matCellDef="let asset">
+                                    {{
+                                        asset.assetDescription ||
+                                            ('No description' | translate)
+                                    }}
+                                </td>
+                            </ng-container>
+                            <ng-container matColumnDef="site">
+                                <th
+                                    mat-header-cell
+                                    mat-sort-header
+                                    *matHeaderCellDef
+                                >
+                                    {{ 'Location' | translate }}
+                                </th>
+                                <td mat-cell *matCellDef="let asset">
+                                    {{
+                                        siteLabel(asset) ||
+                                            ('No site assigned' | translate)
+                                    }}
+                                </td>
+                            </ng-container>
+                        </sp-table>
+                    </div>
+                }
+            </ng-template>
+        </mat-tab>
+        <mat-tab [label]="'By site' | translate">
+            <ng-template matTabContent>
+                <ng-container *ngTemplateOutlet="controls"></ng-container>
+                @if (!loading && !failed && filteredAssets.length) {
+                    <mat-accordion class="concept-content site-groups" multi>
+                        @for (group of groups; track group.id) {
+                            <mat-expansion-panel [expanded]="true">
+                                <mat-expansion-panel-header>
+                                    <mat-panel-title>{{
+                                        group.label ||
+                                            ('No site assigned' | translate)
+                                    }}</mat-panel-title>
+                                    <mat-panel-description
+                                        >{{ group.assets.length }}
+                                        {{
+                                            'Assets' | translate
+                                        }}</mat-panel-description
+                                    >
+                                </mat-expansion-panel-header>
+                                <ul class="site-assets">
+                                    @for (
+                                        asset of group.assets;
+                                        track asset.elementId
+                                    ) {
+                                        <li
+                                            fxLayout="column"
+                                            fxLayoutGap="var(--space-xs)"
+                                        >
+                                            <a
+                                                class="asset-link"
+                                                [routerLink]="[
+                                                    '/assets/details',
+                                                    asset.elementId,
+                                                    'view',
+                                                ]"
+                                                >{{ asset.assetName }}</a
+                                            >
+                                            <span class="supporting-text">{{
+                                                asset.assetDescription ||
+                                                    ('No description'
+                                                        | translate)
+                                            }}</span>
+                                        </li>
+                                    }
+                                </ul>
+                            </mat-expansion-panel>
+                        }
+                    </mat-accordion>
+                }
+            </ng-template>
+        </mat-tab>
+    </mat-tab-group>
+
+    <ng-template #controls>
+        <sp-secondary-toolbar>
+            <div
+                fxLayout="row wrap"
+                fxLayoutAlign="start center"
+                fxLayoutGap="var(--space-md)"
+            >
+                <sp-form-field
+                    [label]="'Search assets' | translate"
+                    [level]="3"
+                >
+                    <mat-form-field
+                        appearance="outline"
+                        subscriptSizing="dynamic"
+                    >
+                        <input
+                            matInput
+                            type="search"
+                            [attr.aria-label]="'Search assets' | translate"
+                            [(ngModel)]="query"
+                            (ngModelChange)="applyFilters()"
+                        />
+                    </mat-form-field>
+                </sp-form-field>
+                @if (query) {
+                    <button
+                        mat-flat-button
+                        type="button"
+                        class="btn-secondary"
+                        (click)="query = ''; applyFilters()"
+                    >
+                        {{ 'Clear search' | translate }}
+                    </button>
+                }
+                @if (!loading && !failed) {
+                    <span role="status"
+                        >{{ 'Showing {{shown}} of {{ total }} assets' |
+                        translate: { shown: filteredAssets.length, total:
+                        assets.length } }}</span
+                    >
+                }
+            </div>
+            @if (browserFilterActive) {
+                <p class="supporting-text">
+                    {{ 'Navigation asset filters are active.' | translate }}
+                </p>
+            }
+        </sp-secondary-toolbar>
+        @if (loading) {
+            <div class="concept-content" role="status">
+                <sp-spinner [text]="'Loading assets' | translate"></sp-spinner>
+            </div>
+        } @else if (failed) {
+            <div class="concept-content" role="alert">
+                <sp-alert-banner
+                    type="error"
+                    [title]="'Could not load assets and sites.' | translate"
+                >
+                    <button
+                        mat-flat-button
+                        type="button"
+                        (click)="loadAssets()"
+                    >
+                        {{ 'Retry' | translate }}
+                    </button>
+                </sp-alert-banner>
+            </div>
+        } @else if (!filteredAssets.length) {
+            <div class="concept-content" role="status">
+                <sp-alert-banner
+                    type="info"
+                    [title]="
+                        (assets.length
+                            ? 'No matching assets'
+                            : 'No assets found.'
+                        ) | translate
+                    "
+                    [description]="
+                        (assets.length
+                            ? 'Try another search or adjust the navigation asset filters.'
+                            : 'Create an asset in the Assets overview to explore these concepts.'
+                        ) | translate
+                    "
+                >
+                </sp-alert-banner>
+            </div>
+        }
+    </ng-template>
+</sp-basic-view>
