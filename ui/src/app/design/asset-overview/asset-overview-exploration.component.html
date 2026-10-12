@@ -20,7 +20,7 @@
     <sp-page-header
         [title]="'Asset overview exploration' | translate"
         [description]="
-            'Three views of the same assets. Search and navigation filters apply to every concept.'
+            'Four views of the same assets. Search and navigation filters apply to every concept.'
                 | translate
         "
         icon="precision_manufacturing"
@@ -31,9 +31,8 @@
             mat-flat-button
             class="btn-secondary"
             routerLink="/assets/overview"
+            >{{ 'Assets' | translate }}</a
         >
-            {{ 'Assets' | translate }}
-        </a>
         <button
             pageActions
             mat-icon-button
@@ -46,7 +45,6 @@
             <mat-icon aria-hidden="true">refresh</mat-icon>
         </button>
     </sp-page-header>
-
     <mat-tab-group
         class="sp-page-tabs"
         [mat-stretch-tabs]="false"
@@ -57,16 +55,11 @@
                 <ng-container *ngTemplateOutlet="controls"></ng-container>
                 @if (!loading && !failed && filteredAssets.length) {
                     <div
-                        class="concept-content"
+                        class="concept-content asset-card-grid"
                         fxLayout="row wrap"
-                        fxLayoutGap="var(--space-md) grid"
                     >
-                        @for (asset of filteredAssets; track asset.elementId) {
-                            <div
-                                fxFlex="33.333"
-                                fxFlex.lt-lg="50"
-                                fxFlex.lt-sm="100"
-                            >
+                        @for (asset of pageAssets; track asset.elementId) {
+                            <div class="asset-card-slot">
                                 <mat-card
                                     appearance="outlined"
                                     class="asset-card"
@@ -79,15 +72,6 @@
                                             fxLayoutAlign="start center"
                                             fxLayoutGap="var(--space-md)"
                                         >
-                                            <div
-                                                class="asset-card-icon"
-                                                fxLayoutAlign="center center"
-                                                fxFlex="none"
-                                            >
-                                                <mat-icon aria-hidden="true"
-                                                    >precision_manufacturing</mat-icon
-                                                >
-                                            </div>
                                             <div
                                                 class="asset-card-identity"
                                                 fxFlex
@@ -121,6 +105,30 @@
                                                     }}</span>
                                                 </div>
                                             </div>
+                                            <sp-asset-image-placeholder></sp-asset-image-placeholder>
+                                            <button
+                                                mat-icon-button
+                                                type="button"
+                                                (click)="
+                                                    openPreview(
+                                                        asset,
+                                                        asset.elementId
+                                                    );
+                                                    $event.stopPropagation()
+                                                "
+                                                [attr.aria-label]="
+                                                    ('Preview' | translate) +
+                                                    ': ' +
+                                                    asset.assetName
+                                                "
+                                                [matTooltip]="
+                                                    'Preview' | translate
+                                                "
+                                            >
+                                                <mat-icon aria-hidden="true"
+                                                    >preview</mat-icon
+                                                >
+                                            </button>
                                         </div>
                                         <p class="asset-card-description">
                                             {{
@@ -129,6 +137,33 @@
                                                         | translate)
                                             }}
                                         </p>
+                                        <div
+                                            class="asset-card-meta"
+                                            fxLayout="row wrap"
+                                            fxLayoutGap="var(--space-sm)"
+                                        >
+                                            <sp-label
+                                                tone="neutral"
+                                                variant="soft"
+                                                size="small"
+                                                >{{ asset.assets?.length || 0 }}
+                                                {{
+                                                    'Subassets' | translate
+                                                }}</sp-label
+                                            >
+                                            <sp-label
+                                                tone="neutral"
+                                                variant="soft"
+                                                size="small"
+                                                >{{
+                                                    asset.assetLinks?.length ||
+                                                        0
+                                                }}
+                                                {{
+                                                    'Links' | translate
+                                                }}</sp-label
+                                            >
+                                        </div>
                                     </mat-card-content>
                                 </mat-card>
                             </div>
@@ -140,69 +175,82 @@
         <mat-tab [label]="'Inventory' | translate">
             <ng-template matTabContent>
                 <ng-container *ngTemplateOutlet="controls"></ng-container>
-                @if (!loading && !failed && filteredAssets.length) {
-                    <div
-                        class="concept-content table-scroll"
-                        tabindex="0"
-                        role="region"
-                        [attr.aria-label]="'Inventory' | translate"
-                    >
-                        <sp-table
-                            [columns]="columns"
-                            [dataSource]="dataSource"
-                            matSort
+                @if (!loading && !failed && treeNodes.length) {
+                    <div class="concept-content inventory-surface">
+                        <div
+                            class="inventory-toolbar"
+                            fxLayout="row wrap"
+                            fxLayoutAlign="space-between center"
+                            fxLayoutGap="var(--space-sm)"
                         >
-                            <ng-container matColumnDef="assetName">
-                                <th
-                                    mat-header-cell
-                                    mat-sort-header
-                                    *matHeaderCellDef
+                            <span class="supporting-text">{{
+                                'Asset hierarchy' | translate
+                            }}</span>
+                            <div fxLayout="row" fxLayoutGap="var(--space-sm)">
+                                <button
+                                    mat-flat-button
+                                    type="button"
+                                    class="btn-secondary small-button"
+                                    (click)="inventoryTree.expandAll()"
                                 >
-                                    {{ 'Asset' | translate }}
-                                </th>
-                                <td mat-cell *matCellDef="let asset">
-                                    <a
-                                        class="asset-link"
-                                        [routerLink]="[
-                                            '/assets/details',
-                                            asset.elementId,
-                                            'view',
-                                        ]"
-                                        >{{ asset.assetName }}</a
-                                    >
-                                </td>
-                            </ng-container>
-                            <ng-container matColumnDef="assetDescription">
-                                <th
-                                    mat-header-cell
-                                    mat-sort-header
-                                    *matHeaderCellDef
+                                    {{ 'Expand all' | translate }}
+                                </button>
+                                <button
+                                    mat-flat-button
+                                    type="button"
+                                    class="btn-secondary small-button"
+                                    (click)="inventoryTree.collapseAll()"
                                 >
-                                    {{ 'Description' | translate }}
-                                </th>
-                                <td mat-cell *matCellDef="let asset">
-                                    {{
-                                        asset.assetDescription ||
-                                            ('No description' | translate)
-                                    }}
-                                </td>
-                            </ng-container>
-                            <ng-container matColumnDef="site">
-                                <th
-                                    mat-header-cell
-                                    mat-sort-header
-                                    *matHeaderCellDef
+                                    {{ 'Collapse all' | translate }}
+                                </button>
+                            </div>
+                        </div>
+                        <mat-tree
+                            #inventoryTree
+                            [dataSource]="pageTreeNodes"
+                            [childrenAccessor]="childrenAccessor"
+                            [expansionKey]="expansionKey"
+                            [attr.aria-label]="'Asset hierarchy' | translate"
+                        >
+                            <mat-nested-tree-node
+                                *matTreeNodeDef="let node"
+                                [isExpandable]="false"
+                            >
+                                <ng-container
+                                    *ngTemplateOutlet="
+                                        treeRow;
+                                        context: {
+                                            $implicit: node,
+                                            tree: inventoryTree,
+                                        }
+                                    "
+                                ></ng-container>
+                            </mat-nested-tree-node>
+                            <mat-nested-tree-node
+                                *matTreeNodeDef="let node; when: hasChildren"
+                                [isExpandable]="true"
+                                [isExpanded]="query.trim().length > 0"
+                            >
+                                <ng-container
+                                    *ngTemplateOutlet="
+                                        treeRow;
+                                        context: {
+                                            $implicit: node,
+                                            tree: inventoryTree,
+                                        }
+                                    "
+                                ></ng-container>
+                                <div
+                                    role="group"
+                                    class="tree-children"
+                                    [hidden]="!inventoryTree.isExpanded(node)"
                                 >
-                                    {{ 'Location' | translate }}
-                                </th>
-                                <td mat-cell *matCellDef="let asset">
-                                    {{
-                                        siteLabel(asset) ||
-                                            ('No site assigned' | translate)
-                                    }}
-                                </td>
-                            </ng-container>
-                        </sp-table>
+                                    <ng-container
+                                        matTreeNodeOutlet
+                                    ></ng-container>
+                                </div>
+                            </mat-nested-tree-node>
+                        </mat-tree>
                     </div>
                 }
             </ng-template>
@@ -215,40 +263,141 @@
                         @for (group of groups; track group.id) {
                             <mat-expansion-panel [expanded]="true">
                                 <mat-expansion-panel-header>
-                                    <mat-panel-title>{{
-                                        group.label ||
-                                            ('No site assigned' | translate)
-                                    }}</mat-panel-title>
-                                    <mat-panel-description
-                                        >{{ group.assets.length }}
-                                        {{
-                                            'Assets' | translate
-                                        }}</mat-panel-description
-                                    >
+                                    <mat-panel-title>
+                                        <mat-icon
+                                            class="site-group-icon"
+                                            aria-hidden="true"
+                                            >{{
+                                                group.id
+                                                    ? 'location_on'
+                                                    : 'folder_open'
+                                            }}</mat-icon
+                                        >
+                                        <strong>{{
+                                            group.label ||
+                                                ('Assets without a site'
+                                                    | translate)
+                                        }}</strong>
+                                    </mat-panel-title>
+                                    <mat-panel-description>
+                                        <sp-label
+                                            tone="neutral"
+                                            variant="soft"
+                                            size="small"
+                                            >{{ group.nodes.length }}
+                                            {{ 'Assets' | translate }}</sp-label
+                                        >
+                                    </mat-panel-description>
                                 </mat-expansion-panel-header>
                                 <ul class="site-assets">
-                                    @for (
-                                        asset of group.assets;
-                                        track asset.elementId
-                                    ) {
+                                    @for (node of group.nodes; track node.id) {
                                         <li
                                             fxLayout="column"
-                                            fxLayoutGap="var(--space-xs)"
+                                            fxLayoutGap="var(--space-sm)"
                                         >
-                                            <a
-                                                class="asset-link"
-                                                [routerLink]="[
-                                                    '/assets/details',
-                                                    asset.elementId,
-                                                    'view',
-                                                ]"
-                                                >{{ asset.assetName }}</a
+                                            <div
+                                                fxLayout="row wrap"
+                                                fxLayoutAlign="start center"
+                                                fxLayoutGap="var(--space-sm)"
                                             >
+                                                <mat-icon
+                                                    class="supporting-text"
+                                                    aria-hidden="true"
+                                                    >precision_manufacturing</mat-icon
+                                                >
+                                                <a
+                                                    class="asset-link"
+                                                    [routerLink]="[
+                                                        '/assets/details',
+                                                        node.rootId,
+                                                        'view',
+                                                    ]"
+                                                    >{{
+                                                        node.asset.assetName
+                                                    }}</a
+                                                >
+                                                <button
+                                                    mat-icon-button
+                                                    type="button"
+                                                    (click)="
+                                                        openPreview(
+                                                            node.asset,
+                                                            node.rootId
+                                                        );
+                                                        $event.stopPropagation()
+                                                    "
+                                                    [attr.aria-label]="
+                                                        ('Preview'
+                                                            | translate) +
+                                                        ': ' +
+                                                        node.asset.assetName
+                                                    "
+                                                    [matTooltip]="
+                                                        'Preview' | translate
+                                                    "
+                                                >
+                                                    <mat-icon aria-hidden="true"
+                                                        >preview</mat-icon
+                                                    >
+                                                </button>
+                                                <sp-label
+                                                    tone="neutral"
+                                                    variant="soft"
+                                                    size="small"
+                                                    >{{
+                                                        node.asset.assets
+                                                            ?.length || 0
+                                                    }}
+                                                    {{
+                                                        'Subassets' | translate
+                                                    }}</sp-label
+                                                >
+                                            </div>
                                             <span class="supporting-text">{{
-                                                asset.assetDescription ||
+                                                node.asset.assetDescription ||
                                                     ('No description'
                                                         | translate)
                                             }}</span>
+                                            @if (node.children.length) {
+                                                <details
+                                                    class="site-hierarchy"
+                                                    (toggle)="
+                                                        setSiteHierarchyExpanded(
+                                                            node.id,
+                                                            $event
+                                                        )
+                                                    "
+                                                    [open]="
+                                                        query.trim().length >
+                                                            0 ||
+                                                        expandedSiteHierarchy.has(
+                                                            node.id
+                                                        )
+                                                    "
+                                                >
+                                                    <summary>
+                                                        {{
+                                                            'Show subasset hierarchy'
+                                                                | translate
+                                                        }}
+                                                    </summary>
+                                                    @if (
+                                                        expandedSiteHierarchy.has(
+                                                            node.id
+                                                        )
+                                                    ) {
+                                                        <ng-container
+                                                            *ngTemplateOutlet="
+                                                                siteBranch;
+                                                                context: {
+                                                                    $implicit:
+                                                                        node.children,
+                                                                }
+                                                            "
+                                                        ></ng-container>
+                                                    }
+                                                </details>
+                                            }
                                         </li>
                                     }
                                 </ul>
@@ -258,49 +407,330 @@
                 }
             </ng-template>
         </mat-tab>
+        <mat-tab [label]="'Browse' | translate">
+            <ng-template matTabContent>
+                <ng-container *ngTemplateOutlet="controls"></ng-container>
+                @if (!loading && !failed && selectedBrowseAsset) {
+                    <div
+                        class="concept-content browse-layout"
+                        fxLayout="row"
+                        fxLayout.lt-md="column"
+                        fxLayoutGap="var(--space-lg)"
+                    >
+                        <section
+                            class="browse-list"
+                            fxFlex="35"
+                            fxFlex.lt-md="100"
+                            [attr.aria-label]="'Assets' | translate"
+                        >
+                            <mat-selection-list
+                                [multiple]="false"
+                                (selectionChange)="
+                                    selectedBrowseAsset =
+                                        $event.options[0].value
+                                "
+                                [attr.aria-label]="
+                                    'Select an asset to inspect' | translate
+                                "
+                            >
+                                @for (
+                                    asset of pageAssets;
+                                    track asset.elementId
+                                ) {
+                                    <mat-list-option
+                                        [value]="asset"
+                                        [selected]="
+                                            selectedBrowseAsset.elementId ===
+                                            asset.elementId
+                                        "
+                                    >
+                                        <mat-icon
+                                            matListItemIcon
+                                            aria-hidden="true"
+                                            >precision_manufacturing</mat-icon
+                                        >
+                                        <span matListItemTitle>{{
+                                            asset.assetName
+                                        }}</span>
+                                        <span matListItemLine>{{
+                                            siteLabel(asset) ||
+                                                ('No site assigned' | translate)
+                                        }}</span>
+                                    </mat-list-option>
+                                }
+                            </mat-selection-list>
+                        </section>
+                        <section
+                            class="browse-details"
+                            fxFlex="65"
+                            fxFlex.lt-md="100"
+                            aria-labelledby="browse-asset-title"
+                        >
+                            <div
+                                fxLayout="row wrap"
+                                fxLayoutAlign="space-between center"
+                                fxLayoutGap="var(--space-md)"
+                            >
+                                <div
+                                    fxLayout="row"
+                                    fxLayoutAlign="start center"
+                                    fxLayoutGap="var(--space-md)"
+                                >
+                                    <h2 id="browse-asset-title">
+                                        {{ selectedBrowseAsset.assetName }}
+                                    </h2>
+                                    <sp-asset-image-placeholder></sp-asset-image-placeholder>
+                                </div>
+                                <a
+                                    mat-flat-button
+                                    class="btn-secondary"
+                                    [routerLink]="[
+                                        '/assets/details',
+                                        selectedBrowseAsset.elementId,
+                                        'view',
+                                    ]"
+                                    >{{ 'Open asset hierarchy' | translate }}</a
+                                >
+                            </div>
+                            <p class="supporting-text">
+                                {{
+                                    selectedBrowseAsset.assetDescription ||
+                                        ('No description' | translate)
+                                }}
+                            </p>
+                            <div
+                                class="browse-meta"
+                                fxLayout="row wrap"
+                                fxLayoutGap="var(--space-sm)"
+                            >
+                                <sp-label tone="neutral" variant="soft">{{
+                                    siteLabel(selectedBrowseAsset) ||
+                                        ('No site assigned' | translate)
+                                }}</sp-label>
+                                <sp-label tone="neutral" variant="soft"
+                                    >{{
+                                        selectedBrowseAsset.assets?.length || 0
+                                    }}
+                                    {{ 'Subassets' | translate }}</sp-label
+                                >
+                                <sp-label tone="neutral" variant="soft"
+                                    >{{
+                                        selectedBrowseAsset.assetLinks
+                                            ?.length || 0
+                                    }}
+                                    {{ 'Links' | translate }}</sp-label
+                                >
+                            </div>
+                            @if (selectedBrowseAsset.assets?.length) {
+                                <sp-split-section
+                                    [level]="3"
+                                    [title]="'Subassets' | translate"
+                                >
+                                    <ng-container
+                                        *ngTemplateOutlet="
+                                            siteBranch;
+                                            context: {
+                                                $implicit: childrenForBrowse,
+                                            }
+                                        "
+                                    ></ng-container>
+                                </sp-split-section>
+                            }
+                            <sp-view-asset-links
+                                [selectedAsset]="selectedBrowseAsset"
+                            ></sp-view-asset-links>
+                        </section>
+                    </div>
+                }
+            </ng-template>
+        </mat-tab>
     </mat-tab-group>
-
+    @if (!loading && !failed && filteredAssets.length) {
+        <mat-paginator
+            [length]="filteredAssets.length"
+            [pageSize]="pageSize"
+            [pageIndex]="pageIndex"
+            [hidePageSize]="true"
+            [showFirstLastButtons]="true"
+            [attr.aria-label]="'Assets' | translate"
+            (page)="changePage($event)"
+        ></mat-paginator>
+    }
+    <ng-template #treeRow let-node let-tree="tree">
+        <div
+            class="tree-row"
+            fxLayout="row"
+            fxLayoutAlign="start center"
+            fxLayoutGap="var(--space-sm)"
+        >
+            <button
+                mat-icon-button
+                type="button"
+                (click)="
+                    openPreview(node.asset, node.rootId);
+                    $event.stopPropagation()
+                "
+                [attr.aria-label]="
+                    ('Preview' | translate) + ': ' + node.asset.assetName
+                "
+                [matTooltip]="'Preview' | translate"
+            >
+                <mat-icon aria-hidden="true">preview</mat-icon>
+            </button>
+            @if (node.children.length) {
+                <button
+                    mat-icon-button
+                    type="button"
+                    (click)="tree.toggle(node)"
+                    [attr.aria-expanded]="tree.isExpanded(node)"
+                    [attr.aria-label]="
+                        ('Toggle subassets' | translate) +
+                        ': ' +
+                        node.asset.assetName
+                    "
+                >
+                    <mat-icon aria-hidden="true">{{
+                        tree.isExpanded(node) ? 'expand_more' : 'chevron_right'
+                    }}</mat-icon>
+                </button>
+            } @else {
+                <span class="tree-leaf-spacer" aria-hidden="true"></span>
+            }
+            <a
+                fxFlex
+                fxLayout="row"
+                fxLayoutAlign="start center"
+                fxLayoutGap="var(--space-sm)"
+                class="asset-link tree-main-link"
+                [routerLink]="['/assets/details', node.rootId, 'view']"
+                [matTooltip]="'Open asset hierarchy' | translate"
+            >
+                <mat-icon class="supporting-text" aria-hidden="true"
+                    >precision_manufacturing</mat-icon
+                >
+                <div fxFlex fxLayout="column" class="tree-identity">
+                    <span>{{ node.asset.assetName }}</span>
+                    @if (node.asset.assetDescription) {
+                        <span class="supporting-text tree-description">{{
+                            node.asset.assetDescription
+                        }}</span>
+                    }
+                </div>
+            </a>
+            @if (node.asset.assets?.length) {
+                <sp-label tone="neutral" variant="soft" size="small"
+                    >{{ node.asset.assets.length }}
+                    {{ 'Subassets' | translate }}</sp-label
+                >
+            }
+        </div>
+    </ng-template>
+    <ng-template #siteBranch let-nodes>
+        <ul class="site-branch">
+            @for (node of nodes; track node.id) {
+                <li>
+                    <div
+                        fxLayout="row wrap"
+                        fxLayoutAlign="start center"
+                        fxLayoutGap="var(--space-xs)"
+                    >
+                        <mat-icon class="supporting-text" aria-hidden="true"
+                            >subdirectory_arrow_right</mat-icon
+                        >
+                        <a
+                            class="asset-link"
+                            [routerLink]="[
+                                '/assets/details',
+                                node.rootId,
+                                'view',
+                            ]"
+                            >{{ node.asset.assetName }}</a
+                        >
+                        <button
+                            mat-icon-button
+                            type="button"
+                            (click)="
+                                openPreview(node.asset, node.rootId);
+                                $event.stopPropagation()
+                            "
+                            [attr.aria-label]="
+                                ('Preview' | translate) +
+                                ': ' +
+                                node.asset.assetName
+                            "
+                            [matTooltip]="'Preview' | translate"
+                        >
+                            <mat-icon aria-hidden="true">preview</mat-icon>
+                        </button>
+                    </div>
+                    @if (node.children.length) {
+                        <details
+                            class="site-hierarchy"
+                            (toggle)="setSiteHierarchyExpanded(node.id, $event)"
+                            [open]="
+                                query.trim().length > 0 ||
+                                expandedSiteHierarchy.has(node.id)
+                            "
+                        >
+                            <summary>
+                                {{ node.asset.assets?.length || 0 }}
+                                {{ 'Subassets' | translate }}
+                            </summary>
+                            @if (expandedSiteHierarchy.has(node.id)) {
+                                <ng-container
+                                    *ngTemplateOutlet="
+                                        siteBranch;
+                                        context: { $implicit: node.children }
+                                    "
+                                ></ng-container>
+                            }
+                        </details>
+                    }
+                </li>
+            }
+        </ul>
+    </ng-template>
     <ng-template #controls>
         <sp-secondary-toolbar>
             <div
                 fxLayout="row wrap"
-                fxLayoutAlign="start center"
+                fxLayoutAlign="space-between center"
                 fxLayoutGap="var(--space-md)"
             >
-                <sp-form-field
-                    [label]="'Search assets' | translate"
-                    [level]="3"
-                >
-                    <mat-form-field
-                        appearance="outline"
-                        subscriptSizing="dynamic"
-                    >
-                        <input
-                            matInput
-                            type="search"
-                            [attr.aria-label]="'Search assets' | translate"
-                            [(ngModel)]="query"
-                            (ngModelChange)="applyFilters()"
-                        />
-                    </mat-form-field>
-                </sp-form-field>
-                @if (query) {
-                    <button
-                        mat-flat-button
-                        type="button"
-                        class="btn-secondary"
-                        (click)="query = ''; applyFilters()"
-                    >
-                        {{ 'Clear search' | translate }}
-                    </button>
-                }
-                @if (!loading && !failed) {
-                    <span role="status"
-                        >{{ 'Showing {{shown}} of {{ total }} assets' |
+                <span role="status" class="supporting-text">
+                    @if (!loading && !failed) {
+                        {{ 'Showing {{shown}} of {{ total }} assets' |
                         translate: { shown: filteredAssets.length, total:
-                        assets.length } }}</span
-                    >
-                }
+                        assets.length } }}
+                    }
+                </span>
+                <mat-form-field
+                    class="form-field-small table-search-field"
+                    appearance="outline"
+                    subscriptSizing="dynamic"
+                >
+                    <mat-icon matPrefix aria-hidden="true">search</mat-icon>
+                    <input
+                        #searchInput
+                        matInput
+                        type="text"
+                        [placeholder]="'Search assets' | translate"
+                        [attr.aria-label]="'Search assets' | translate"
+                        [(ngModel)]="query"
+                        (ngModelChange)="applyFilters()"
+                    />
+                    @if (query) {
+                        <button
+                            mat-icon-button
+                            matSuffix
+                            type="button"
+                            [attr.aria-label]="'Clear search' | translate"
+                            (click)="clearSearch(searchInput)"
+                        >
+                            <mat-icon aria-hidden="true">close</mat-icon>
+                        </button>
+                    }
+                </mat-form-field>
             </div>
             @if (browserFilterActive) {
                 <p class="supporting-text">

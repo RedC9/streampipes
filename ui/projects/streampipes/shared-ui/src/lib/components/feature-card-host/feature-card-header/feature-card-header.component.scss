@@ -84,6 +84,11 @@
 }
 
 /* Title */
+.feature-card-header__title-row {
+    max-width: 100%;
+    min-width: 0;
+}
+
 .feature-card-header__title {
     font-size: var(--text-lg, 1.1rem);
     font-weight: 600;

@@ -37,7 +37,15 @@
         fxLayout="column"
         fxLayoutAlign="start start"
     >
-        <h2 class="feature-card-header__title">{{ title }}</h2>
+        <div
+            class="feature-card-header__title-row"
+            fxLayout="row"
+            fxLayoutAlign="start center"
+            fxLayoutGap="var(--space-md)"
+        >
+            <h2 class="feature-card-header__title">{{ title }}</h2>
+            <ng-content select="[featureCardVisual]"></ng-content>
+        </div>
         <p class="feature-card-header__description">{{ description }}</p>
 
         @if (detailsLink?.length) {

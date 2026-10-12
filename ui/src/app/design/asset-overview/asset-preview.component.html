@@ -1,0 +1,61 @@
+<!--
+ ~ Licensed to the Apache Software Foundation (ASF) under one or more
+ ~ contributor license agreements.  See the NOTICE file distributed with
+ ~ this work for additional information regarding copyright ownership.
+ ~ The ASF licenses this file to You under the Apache License, Version 2.0
+ ~ (the "License"); you may not use this file except in compliance with
+ ~ the License.  You may obtain a copy of the License at
+ ~
+ ~    http://www.apache.org/licenses/LICENSE-2.0
+ ~
+ ~ Unless required by applicable law or agreed to in writing, software
+ ~ distributed under the License is distributed on an "AS IS" BASIS,
+ ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ ~ See the License for the specific language governing permissions and
+ ~ limitations under the License.
+ ~
+-->
+
+<sp-feature-card-header
+    [title]="asset.assetName"
+    [description]="asset.assetDescription || ('No description' | translate)"
+    iconColor="var(--color-primary)"
+    (closeClick)="close()"
+>
+    <sp-asset-image-placeholder featureCardVisual></sp-asset-image-placeholder>
+</sp-feature-card-header>
+<div class="preview-body">
+    <div
+        class="preview-meta"
+        fxLayout="row wrap"
+        fxLayoutAlign="start center"
+        fxLayoutGap="var(--space-sm)"
+    >
+        <sp-label tone="neutral" variant="soft">{{
+            siteLabel || ('No site assigned' | translate)
+        }}</sp-label>
+        @if (asset.assetSite?.area) {
+            <sp-label tone="neutral" variant="outline">{{
+                asset.assetSite.area
+            }}</sp-label>
+        }
+    </div>
+    @if (asset.assets?.length) {
+        <sp-split-section [level]="3" [title]="'Subassets' | translate">
+            <ul class="preview-children">
+                @for (child of asset.assets; track $index) {
+                    <li>{{ child.assetName }}</li>
+                }
+            </ul>
+        </sp-split-section>
+    }
+    <sp-view-asset-links [selectedAsset]="asset"></sp-view-asset-links>
+    <a
+        mat-flat-button
+        class="btn-secondary"
+        [routerLink]="['/assets/details', rootId, 'view']"
+        (click)="close()"
+    >
+        {{ 'Open asset hierarchy' | translate }}
+    </a>
+</div>
