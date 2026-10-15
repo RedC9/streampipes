@@ -19,6 +19,8 @@ package org.apache.streampipes.rest.impl.admin;
 
 import org.apache.streampipes.model.client.user.Group;
 import org.apache.streampipes.model.message.Notifications;
+import org.apache.streampipes.resource.management.FavoriteCleanupManager;
+import org.apache.streampipes.resource.management.SpResourceManager;
 import org.apache.streampipes.rest.core.base.impl.AbstractAuthGuardedRestResource;
 import org.apache.streampipes.rest.security.AuthConstants;
 import org.apache.streampipes.rest.shared.exception.SpMessageException;
@@ -46,11 +48,14 @@ public class UserGroupResource extends AbstractAuthGuardedRestResource {
 
   private final IUserGroupStorage userGroupStorage;
   private final IUserStorage userStorage;
+  private final FavoriteCleanupManager favoriteCleanup;
 
   public UserGroupResource(IUserGroupStorage userGroupStorage,
-                           IUserStorage userStorage) {
+                           IUserStorage userStorage,
+                           SpResourceManager resourceManager) {
     this.userGroupStorage = userGroupStorage;
     this.userStorage = userStorage;
+    this.favoriteCleanup = resourceManager.manageFavoriteCleanup();
   }
 
   @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
@@ -74,7 +79,9 @@ public class UserGroupResource extends AbstractAuthGuardedRestResource {
           HttpStatus.BAD_REQUEST,
           Notifications.error("Wrong group id provided"));
     } else {
-      return ok(userGroupStorage.updateElement(group));
+      var updatedGroup = userGroupStorage.updateElement(group);
+      favoriteCleanup.permissionsChanged();
+      return ok(updatedGroup);
     }
   }
 
@@ -92,6 +99,7 @@ public class UserGroupResource extends AbstractAuthGuardedRestResource {
           userStorage.updateUser(user);
         }
       });
+      favoriteCleanup.permissionsChanged();
       return ok();
     } else {
       return badRequest();
