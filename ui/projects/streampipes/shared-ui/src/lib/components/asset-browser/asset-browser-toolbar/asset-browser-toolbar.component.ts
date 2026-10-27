@@ -18,6 +18,8 @@
 
 import {
     Component,
+    Input,
+    TemplateRef,
     inject,
     OnDestroy,
     OnInit,
@@ -57,6 +59,7 @@ import { TranslatePipe } from '@ngx-translate/core';
     ],
 })
 export class AssetBrowserToolbarComponent implements OnInit, OnDestroy {
+    @Input() additionalOptionsTemplate?: TemplateRef<unknown>;
     private currentUserService = inject(CurrentUserService);
     private assetBrowserService = inject(SpAssetBrowserService);
 

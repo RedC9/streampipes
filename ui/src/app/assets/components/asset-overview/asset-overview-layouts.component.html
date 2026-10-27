@@ -1,0 +1,293 @@
+<!--
+~ Licensed to the Apache Software Foundation (ASF) under one or more
+~ contributor license agreements.  See the NOTICE file distributed with
+~ this work for additional information regarding copyright ownership.
+~ The ASF licenses this file to You under the Apache License, Version 2.0
+~ (the "License"); you may not use this file except in compliance with
+~ the License.  You may obtain a copy of the License at
+~
+~    http://www.apache.org/licenses/LICENSE-2.0
+~
+~ Unless required by applicable law or agreed to in writing, software
+~ distributed under the License is distributed on an "AS IS" BASIS,
+~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+~ See the License for the specific language governing permissions and
+~ limitations under the License.
+~
+-->
+
+<sp-secondary-toolbar>
+    <div fxLayout="row wrap" fxLayoutAlign="end center">
+        <mat-form-field
+            class="form-field-small table-search-field"
+            appearance="outline"
+            subscriptSizing="dynamic"
+        >
+            <mat-icon matPrefix aria-hidden="true">search</mat-icon>
+            <input
+                #searchInput
+                matInput
+                [placeholder]="'Search assets' | translate"
+                [attr.aria-label]="'Search assets' | translate"
+                [(ngModel)]="query"
+                (ngModelChange)="applyFilters()"
+            />
+            @if (query) {
+                <button
+                    mat-icon-button
+                    matSuffix
+                    type="button"
+                    [attr.aria-label]="'Clear search' | translate"
+                    (click)="clearSearch(searchInput)"
+                >
+                    <mat-icon aria-hidden="true">close</mat-icon>
+                </button>
+            }
+        </mat-form-field>
+    </div>
+</sp-secondary-toolbar>
+
+@if (viewMode === 'cards') {
+    <div class="asset-card-grid" fxLayout="row wrap">
+        @for (node of pageNodes; track node.id) {
+            <div class="asset-card-slot">
+                <mat-card appearance="outlined" class="asset-card">
+                    <mat-card-content class="asset-card-content">
+                        <div
+                            fxLayout="row"
+                            fxLayoutAlign="start center"
+                            fxLayoutGap="var(--space-sm)"
+                        >
+                            <div class="asset-card-identity" fxFlex>
+                                <h2 class="asset-card-title">
+                                    <a
+                                        class="asset-link"
+                                        [routerLink]="[
+                                            '/assets/details',
+                                            node.rootId,
+                                            'view',
+                                        ]"
+                                        >{{ node.asset.assetName }}</a
+                                    >
+                                </h2>
+                                <span class="supporting-text">{{
+                                    siteLabel(node.asset) ||
+                                        ('No site assigned' | translate)
+                                }}</span>
+                            </div>
+                            <sp-asset-image-placeholder></sp-asset-image-placeholder>
+                        </div>
+                        <p class="asset-card-description">
+                            {{
+                                node.asset.assetDescription ||
+                                    ('No description' | translate)
+                            }}
+                        </p>
+                        <div
+                            fxLayout="row wrap"
+                            fxLayoutAlign="space-between center"
+                            fxLayoutGap="var(--space-sm)"
+                        >
+                            <div
+                                fxLayout="row wrap"
+                                fxLayoutGap="var(--space-sm)"
+                            >
+                                <sp-label
+                                    tone="neutral"
+                                    variant="soft"
+                                    size="small"
+                                    >{{ node.asset.assets?.length || 0 }}
+                                    {{ 'Subassets' | translate }}</sp-label
+                                >
+                                <sp-label
+                                    tone="neutral"
+                                    variant="soft"
+                                    size="small"
+                                    >{{ node.asset.assetLinks?.length || 0 }}
+                                    {{ 'Links' | translate }}</sp-label
+                                >
+                            </div>
+                            <div fxLayout="row">
+                                <ng-container
+                                    *ngTemplateOutlet="
+                                        previewButton;
+                                        context: { $implicit: node }
+                                    "
+                                ></ng-container>
+                                <button
+                                    mat-icon-button
+                                    type="button"
+                                    [matMenuTriggerFor]="cardMenu"
+                                    (click)="$event.stopPropagation()"
+                                    [attr.aria-label]="
+                                        ('More options' | translate) +
+                                        ': ' +
+                                        node.asset.assetName
+                                    "
+                                    data-cy="more-options"
+                                >
+                                    <mat-icon aria-hidden="true"
+                                        >more_vert</mat-icon
+                                    >
+                                </button>
+                                <mat-menu
+                                    #cardMenu="matMenu"
+                                    class="sp-table-actions-menu"
+                                >
+                                    <ng-container
+                                        *ngTemplateOutlet="
+                                            rootActions;
+                                            context: {
+                                                $implicit: rootSummaries.get(
+                                                    node.rootId
+                                                ),
+                                            }
+                                        "
+                                    ></ng-container>
+                                </mat-menu>
+                            </div>
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+        }
+    </div>
+} @else {
+    <sp-table
+        [columns]="columns"
+        [dataSource]="detailedData"
+        [showPaginator]="false"
+        [showActionsMenu]="true"
+        [rowsClickable]="true"
+        (rowClicked)="openDetails($event)"
+        matSort
+        [matSortActive]="sort.active"
+        [matSortDirection]="sort.direction"
+        (matSortChange)="changeSort($event)"
+    >
+        <ng-container matColumnDef="assetName">
+            <th mat-header-cell mat-sort-header *matHeaderCellDef>
+                {{ 'Asset' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row">
+                <div
+                    class="detailed-asset-name"
+                    fxLayout="row"
+                    fxLayoutAlign="start center"
+                    fxLayoutGap="var(--space-xs)"
+                    [style.padding-inline-start]="row.depth * 1.25 + 'rem'"
+                >
+                    <ng-container
+                        *ngTemplateOutlet="
+                            previewButton;
+                            context: { $implicit: row.node }
+                        "
+                    ></ng-container>
+                    @if (row.node.children.length) {
+                        <button
+                            mat-icon-button
+                            type="button"
+                            (click)="toggle(row.node); $event.stopPropagation()"
+                            [attr.aria-expanded]="expandedIds.has(row.node.id)"
+                            [attr.aria-label]="
+                                ('Toggle subassets' | translate) +
+                                ': ' +
+                                row.assetName
+                            "
+                        >
+                            <mat-icon aria-hidden="true">{{
+                                expandedIds.has(row.node.id)
+                                    ? 'expand_more'
+                                    : 'chevron_right'
+                            }}</mat-icon>
+                        </button>
+                    } @else {
+                        <span
+                            class="tree-leaf-spacer"
+                            aria-hidden="true"
+                        ></span>
+                    }
+                    <div fxLayout="column" class="asset-name-text">
+                        <b data-cy="asset-name-cell">{{ row.assetName }}</b>
+                        <small>{{ row.assetDescription }}</small>
+                    </div>
+                </div>
+            </td>
+        </ng-container>
+        <ng-container matColumnDef="location">
+            <th mat-header-cell mat-sort-header *matHeaderCellDef>
+                {{ 'Location' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row">
+                {{ siteIdLabel(row.siteId) || '-' }}
+            </td>
+        </ng-container>
+        <ng-template spTableActions let-row>
+            @if (row.depth === 0) {
+                <ng-container
+                    *ngTemplateOutlet="
+                        rootActions;
+                        context: {
+                            $implicit: rootSummaries.get(row.node.rootId),
+                        }
+                    "
+                ></ng-container>
+            } @else {
+                <a
+                    mat-menu-item
+                    [routerLink]="['/assets/details', row.node.rootId, 'view']"
+                >
+                    <mat-icon aria-hidden="true">visibility</mat-icon>
+                    {{ 'Open asset hierarchy' | translate }}
+                </a>
+                @if (hasWritePrivilege) {
+                    <a
+                        mat-menu-item
+                        [routerLink]="[
+                            '/assets/details',
+                            row.node.rootId,
+                            'edit',
+                        ]"
+                    >
+                        <mat-icon aria-hidden="true">edit</mat-icon>
+                        {{ 'Edit asset hierarchy' | translate }}
+                    </a>
+                }
+            }
+        </ng-template>
+    </sp-table>
+}
+@if (!resultCount) {
+    <sp-alert-banner
+        type="info"
+        [title]="
+            (assets.length ? 'No matching assets' : 'No assets found.')
+                | translate
+        "
+    ></sp-alert-banner>
+}
+@if (resultCount) {
+    <mat-paginator
+        [length]="resultCount"
+        [pageSize]="pageSize"
+        [pageIndex]="pageIndex"
+        [hidePageSize]="true"
+        [showFirstLastButtons]="true"
+        [attr.aria-label]="'Assets' | translate"
+        (page)="changePage($event)"
+    ></mat-paginator>
+}
+
+<ng-template #previewButton let-node>
+    <button
+        mat-icon-button
+        type="button"
+        (click)="openPreview(node); $event.stopPropagation()"
+        [attr.aria-label]="
+            ('Preview' | translate) + ': ' + node.asset.assetName
+        "
+        [matTooltip]="'Preview' | translate"
+    >
+        <mat-icon aria-hidden="true">preview</mat-icon>
+    </button>
+</ng-template>

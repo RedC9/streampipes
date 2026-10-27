@@ -18,7 +18,12 @@
 
 import type { SpAsset, SpAssetModel } from '@streampipes/platform-services';
 import { describe, expect, it } from 'vitest';
-import { buildAssetHierarchy, filterAssetHierarchy } from './asset-hierarchy';
+import {
+    buildAssetHierarchy,
+    filterAssetHierarchy,
+    sortAssetHierarchy,
+    flattenVisibleAssetHierarchy,
+} from './asset-hierarchy';
 
 const leaf = (name: string, children: SpAsset[] = []): SpAsset => ({
     assetId: name,
@@ -41,6 +46,47 @@ const root = (name: string, children: SpAsset[] = []): SpAssetModel => ({
 const siteLabel = (asset: SpAsset) => asset.assetSite?.siteId ?? '';
 
 describe('Asset hierarchy search', () => {
+    it('sorts siblings without moving a child away from its parent', () => {
+        const nodes = buildAssetHierarchy([
+            root('A', [leaf('A1'), leaf('A2')]),
+            root('B', [leaf('B1')]),
+        ]);
+        const sorted = sortAssetHierarchy(nodes, (a, b) =>
+            b.assetName.localeCompare(a.assetName),
+        );
+        expect(sorted.map(node => node.asset.assetName)).toEqual(['B', 'A']);
+        expect(sorted[1].children.map(node => node.asset.assetName)).toEqual([
+            'A2',
+            'A1',
+        ]);
+        expect(nodes[0].children.map(node => node.asset.assetName)).toEqual([
+            'A1',
+            'A2',
+        ]);
+    });
+
+    it('keeps collapsed descendants out of detailed rows and retains depth when expanded', () => {
+        const nodes = buildAssetHierarchy([
+            root('A', [leaf('A1', [leaf('A1a')])]),
+            root('B'),
+        ]);
+        expect(
+            flattenVisibleAssetHierarchy(nodes, new Set()).map(
+                row => row.node.asset.assetName,
+            ),
+        ).toEqual(['A', 'B']);
+        const rows = flattenVisibleAssetHierarchy(
+            nodes,
+            new Set(['A', 'A/A1']),
+        );
+        expect(rows.map(row => [row.node.asset.assetName, row.depth])).toEqual([
+            ['A', 0],
+            ['A1', 1],
+            ['A1a', 2],
+            ['B', 0],
+        ]);
+        expect(rows[2].node.rootId).toBe('A');
+    });
     it('keeps the ancestor chain of a child match and removes unrelated siblings', () => {
         const original = buildAssetHierarchy([
             root('Factory', [leaf('Line', [leaf('Pump')]), leaf('Oven')]),

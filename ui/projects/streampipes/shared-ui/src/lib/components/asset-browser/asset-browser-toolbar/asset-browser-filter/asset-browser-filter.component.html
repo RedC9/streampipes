@@ -36,6 +36,11 @@
                 [activeFilters]="activeFilters"
             >
             </sp-asset-browser-filter-labels>
+            @if (additionalOptionsTemplate) {
+                <ng-container
+                    *ngTemplateOutlet="additionalOptionsTemplate"
+                ></ng-container>
+            }
             <mat-divider></mat-divider>
             <div fxLayout="row" fxLayoutAlign="space-between center">
                 <button

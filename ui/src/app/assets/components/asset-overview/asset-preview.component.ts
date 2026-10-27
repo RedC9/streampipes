@@ -28,7 +28,7 @@ import {
     SplitSectionComponent,
     SpLabelComponent,
 } from '@streampipes/shared-ui';
-import { ViewAssetLinksComponent } from '../../assets/components/asset-details/view-asset/view-asset-links/view-asset-links.component';
+import { ViewAssetLinksComponent } from '../asset-details/view-asset/view-asset-links/view-asset-links.component';
 import { AssetImagePlaceholderComponent } from './asset-image-placeholder.component';
 
 @Component({

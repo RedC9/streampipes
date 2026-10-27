@@ -25,6 +25,40 @@ export interface AssetHierarchyNode {
     children: AssetHierarchyNode[];
 }
 
+export interface AssetHierarchyRow {
+    node: AssetHierarchyNode;
+    depth: number;
+}
+
+export function sortAssetHierarchy(
+    nodes: AssetHierarchyNode[],
+    compare: (a: SpAsset, b: SpAsset) => number,
+): AssetHierarchyNode[] {
+    return [...nodes]
+        .sort((a, b) => compare(a.asset, b.asset))
+        .map(node => ({
+            ...node,
+            children: sortAssetHierarchy(node.children, compare),
+        }));
+}
+
+export function flattenVisibleAssetHierarchy(
+    nodes: AssetHierarchyNode[],
+    expandedIds: ReadonlySet<string>,
+    depth = 0,
+): AssetHierarchyRow[] {
+    return nodes.flatMap(node => [
+        { node, depth },
+        ...(expandedIds.has(node.id)
+            ? flattenVisibleAssetHierarchy(
+                  node.children,
+                  expandedIds,
+                  depth + 1,
+              )
+            : []),
+    ]);
+}
+
 export function buildAssetHierarchy(
     assets: SpAssetModel[],
 ): AssetHierarchyNode[] {

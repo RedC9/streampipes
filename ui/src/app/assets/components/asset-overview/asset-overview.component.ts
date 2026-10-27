@@ -18,6 +18,8 @@
 
 import {
     Component,
+    DestroyRef,
+    effect,
     inject,
     OnDestroy,
     OnInit,
@@ -40,6 +42,8 @@ import {
 } from '@streampipes/platform-services';
 import {
     ConfirmDialogComponent,
+    SpAlertBannerComponent,
+    SpSpinnerComponent,
     CurrentUserService,
     DialogService,
     ObjectManageDialogComponent,
@@ -52,10 +56,14 @@ import {
     SpTableActionsDirective,
     SpTableComponent,
 } from '@streampipes/shared-ui';
+import { NgTemplateOutlet } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AssetOverviewLayoutsComponent } from './asset-overview-layouts.component';
+import { AssetOverviewViewService } from './asset-overview-view.service';
 import { copyAssetHierarchy } from '../../utils/copy-asset-hierarchy';
 import { moveAssetToParent } from '../../utils/move-asset';
 import { SpAssetRoutes } from '../../assets.breadcrumb';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { IdGeneratorService } from '../../../core-services/id-generator/id-generator.service';
 import { UserPrivilege } from '../../../core/auth/user-privilege.enum';
 import { MatDialog } from '@angular/material/dialog';
@@ -88,7 +96,10 @@ type ManageableAsset = SpAssetModel & {
     styleUrls: ['./asset-overview.component.scss'],
     changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
-        RouterLink,
+        NgTemplateOutlet,
+        AssetOverviewLayoutsComponent,
+        SpAlertBannerComponent,
+        SpSpinnerComponent,
         SpBasicViewComponent,
         FlexDirective,
         LayoutAlignDirective,
@@ -112,6 +123,17 @@ type ManageableAsset = SpAssetModel & {
     ],
 })
 export class SpAssetOverviewComponent implements OnInit, OnDestroy {
+    readonly viewState = inject(AssetOverviewViewService);
+    private readonly destroyRef = inject(DestroyRef);
+    private readonly synchronizeView = effect(() => {
+        if (this.viewState.view() !== 'table') {
+            this.loadHierarchyAssets();
+        }
+    });
+    hierarchyAssets?: SpAssetModel[];
+    hierarchyLoading = false;
+    hierarchyError = false;
+
     private assetService = inject(AssetManagementService);
     private breadcrumbService = inject(SpBreadcrumbService);
     private dialogService = inject(DialogService);
@@ -129,7 +151,9 @@ export class SpAssetOverviewComponent implements OnInit, OnDestroy {
     displayedColumns: string[] = ['assetName', 'location', 'actions'];
 
     @ViewChild(MatSort)
-    sort: MatSort;
+    set sort(sort: MatSort) {
+        this.dataSource.sort = sort;
+    }
 
     dataSource: MatTableDataSource<AssetSummaryDto> =
         new MatTableDataSource<AssetSummaryDto>();
@@ -185,10 +209,9 @@ export class SpAssetOverviewComponent implements OnInit, OnDestroy {
                     });
                 }
 
-                this.currentFilterIds =
-                    filter?.selectedAssets === undefined
-                        ? undefined
-                        : elementIdsSet;
+                this.currentFilterIds = filter?.filterActive
+                    ? elementIdsSet
+                    : undefined;
                 this.applyAssetFilters(this.currentFilterIds);
             });
     }
@@ -199,6 +222,10 @@ export class SpAssetOverviewComponent implements OnInit, OnDestroy {
     }
 
     loadAssets(): void {
+        this.hierarchyAssets = undefined;
+        if (this.viewState.view() !== 'table') {
+            this.loadHierarchyAssets();
+        }
         this.assetService.getAssetSummary().subscribe(result => {
             this.existingAssets = result.resources.sort((a, b) =>
                 a.assetName.localeCompare(b.assetName),
@@ -207,15 +234,35 @@ export class SpAssetOverviewComponent implements OnInit, OnDestroy {
         });
     }
 
+    loadHierarchyAssets(force = false): void {
+        if (this.hierarchyLoading || (this.hierarchyAssets && !force)) {
+            return;
+        }
+        this.hierarchyLoading = true;
+        this.hierarchyError = false;
+        this.assetService
+            .getAllAssets()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: assets => {
+                    this.hierarchyAssets = assets;
+                    this.hierarchyLoading = false;
+                },
+                error: () => {
+                    this.hierarchyError = true;
+                    this.hierarchyLoading = false;
+                },
+            });
+    }
+
     applyAssetFilters(elementIds?: Set<string>): void {
-        if (elementIds === undefined || elementIds.size === 0) {
+        if (elementIds === undefined) {
             this.filteredAssets = this.existingAssets;
         } else {
             this.filteredAssets = this.existingAssets.filter(a =>
                 elementIds.has(a.elementId),
             );
         }
-        this.dataSource.sort = this.sort;
         this.dataSource.data = this.filteredAssets;
     }
 

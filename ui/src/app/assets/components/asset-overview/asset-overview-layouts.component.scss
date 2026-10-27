@@ -1,0 +1,105 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+:host {
+    display: block;
+    min-width: 0;
+    container-type: inline-size;
+    container-name: asset-overview;
+}
+.asset-card-grid {
+    gap: var(--space-md);
+    margin-top: var(--space-lg);
+}
+.asset-card-slot {
+    flex: 0 0 100%;
+    min-width: 0;
+}
+@container asset-overview (min-width: 36rem) {
+    .asset-card-slot {
+        flex-basis: calc((100% - var(--space-md)) / 2);
+    }
+}
+@container asset-overview (min-width: 56rem) {
+    .asset-card-slot {
+        flex-basis: calc((100% - 2 * var(--space-md)) / 3);
+    }
+}
+.asset-card {
+    height: 100%;
+    box-shadow: none;
+    border-radius: var(--radius-md);
+    background: var(--mat-sys-surface);
+    border-color: var(--mat-sys-outline-variant);
+}
+.asset-card:hover,
+.asset-card:focus-within {
+    border-color: var(--mat-sys-primary);
+}
+.asset-card-content,
+.asset-card-content:first-child,
+.asset-card-content:last-child {
+    padding: var(--space-lg);
+}
+.asset-card-identity,
+.asset-name-text {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.asset-card-title {
+    margin: 0;
+    font-family: var(--font-emphasized);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+}
+.asset-card-description {
+    margin-block: var(--space-md);
+    white-space: pre-line;
+}
+.asset-link {
+    color: var(--mat-sys-primary);
+    text-decoration: none;
+}
+.asset-link:focus-visible {
+    outline: 3px solid var(--mat-sys-primary);
+    outline-offset: 3px;
+}
+.supporting-text,
+.asset-card-description {
+    color: var(--mat-sys-on-surface-variant);
+}
+.table-search-field {
+    width: 18rem;
+    max-width: 100%;
+}
+.detailed-asset-name {
+    min-width: 16rem;
+    padding-block: var(--space-xs);
+}
+.tree-leaf-spacer {
+    width: 2.5rem;
+    flex-shrink: 0;
+}
+mat-paginator {
+    margin-top: var(--space-md);
+}
+@media (max-width: 40rem) {
+    .table-search-field {
+        width: 100%;
+    }
+}

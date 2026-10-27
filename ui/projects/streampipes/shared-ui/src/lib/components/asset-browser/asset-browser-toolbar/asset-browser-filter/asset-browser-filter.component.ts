@@ -20,6 +20,7 @@ import {
     Component,
     EventEmitter,
     Input,
+    TemplateRef,
     OnDestroy,
     OnInit,
     Output,
@@ -27,6 +28,7 @@ import {
     ChangeDetectionStrategy,
 } from '@angular/core';
 import { AssetBrowserData, AssetFilter } from '../../asset-browser.model';
+import { NgTemplateOutlet } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { SpAssetBrowserService } from '../../asset-browser.service';
 import {
@@ -50,6 +52,7 @@ import { MatIcon } from '@angular/material/icon';
     styleUrl: 'asset-browser-filter.component.scss',
     changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
+        NgTemplateOutlet,
         LayoutDirective,
         LayoutGapDirective,
         AssetBrowserFilterAssetModelComponent,
@@ -66,6 +69,7 @@ import { MatIcon } from '@angular/material/icon';
     ],
 })
 export class AssetBrowserFilterComponent implements OnInit, OnDestroy {
+    @Input() additionalOptionsTemplate?: TemplateRef<unknown>;
     private assetBrowserService = inject(SpAssetBrowserService);
 
     @Input()

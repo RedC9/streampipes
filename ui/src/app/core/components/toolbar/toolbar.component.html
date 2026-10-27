@@ -21,7 +21,14 @@
         <sp-breadcrumb class="toolbar-breadcrumb"></sp-breadcrumb>
         @if (authenticated) {
             <div class="toolbar-actions" fxLayout fxLayoutAlign="end center">
-                <sp-asset-browser-toolbar></sp-asset-browser-toolbar>
+                <sp-asset-browser-toolbar
+                    [additionalOptionsTemplate]="
+                        isAssetOverview ? assetViewOptions : undefined
+                    "
+                ></sp-asset-browser-toolbar>
+                <ng-template #assetViewOptions>
+                    <sp-asset-overview-view-options></sp-asset-overview-view-options>
+                </ng-template>
                 <button
                     mat-icon-button
                     class="account-trigger"

@@ -42,6 +42,7 @@ import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
 import { MatDivider } from '@angular/material/divider';
 import { TranslatePipe } from '@ngx-translate/core';
+import { AssetOverviewViewOptionsComponent } from '../../../assets/components/asset-overview/asset-overview-view-options.component';
 
 @Component({
     selector: 'sp-toolbar',
@@ -49,6 +50,7 @@ import { TranslatePipe } from '@ngx-translate/core';
     styleUrls: ['./toolbar.component.scss'],
     changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
+        AssetOverviewViewOptionsComponent,
         MatToolbar,
         LayoutDirective,
         LayoutAlignDirective,
@@ -69,6 +71,9 @@ export class ToolbarComponent
     implements OnInit
 {
     userEmail: string;
+    get isAssetOverview(): boolean {
+        return this.router.url.split(/[?#]/)[0] === '/assets/overview';
+    }
     darkMode: boolean;
 
     appearanceControl: UntypedFormControl;
