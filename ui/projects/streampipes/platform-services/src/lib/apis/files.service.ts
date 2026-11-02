@@ -80,6 +80,15 @@ export class FilesService {
         );
     }
 
+    isFileUsedByAsset(fileId: string): Observable<boolean> {
+        return this.http.get<boolean>(
+            this.platformServicesCommons.apiBasePath +
+                '/files/' +
+                encodeURIComponent(fileId) +
+                '/usage',
+        );
+    }
+
     getFile(filename: string): Observable<Blob> {
         return this.http.get(
             this.platformServicesCommons.apiBasePath + '/files/' + filename,

@@ -32,6 +32,7 @@ import org.apache.http.client.fluent.Content;
 import org.apache.http.client.fluent.Request;
 
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -80,6 +81,14 @@ public class GenericStorageImpl implements IGenericStorage {
         .distinct()
         .sorted()
         .collect(Collectors.toList());
+  }
+
+  @Override
+  public boolean isFileUsedByAsset(String fileId) throws IOException {
+    String key = URLEncoder.encode(mapper.writeValueAsString(fileId), StandardCharsets.UTF_8);
+    var result = queryDocuments(getDatabaseRoute()
+        + "/_design/asset-file-usage/_view/by-file?key=" + key + "&limit=1&reduce=false");
+    return !((List<?>) result.get("rows")).isEmpty();
   }
 
   @Override

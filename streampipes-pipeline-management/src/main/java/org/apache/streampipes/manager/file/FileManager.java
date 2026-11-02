@@ -95,8 +95,9 @@ public class FileManager {
   public void deleteFile(String id, ResourceDeletionManager resourceDeletionManager) {
     var fileMetadata = fileMetadataStorage.getElementById(id);
     if (fileMetadata != null) {
+      resourceDeletionManager.ensureFileIsUnused(id);
       fileHandler.deleteFile(fileMetadata.getFilename());
-      resourceDeletionManager.delete(fileMetadataStorage, id);
+      fileMetadataStorage.deleteElement(fileMetadata);
     }
   }
 

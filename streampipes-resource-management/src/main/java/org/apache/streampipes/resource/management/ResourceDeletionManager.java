@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 
 /** Coordinates document deletion and asset-link cleanup for linkable resources. */
 public class ResourceDeletionManager {
@@ -41,6 +42,20 @@ public class ResourceDeletionManager {
     if (resource != null) {
       removeAssetLinks(resourceId);
       storage.deleteElement(resource);
+    }
+  }
+
+  public boolean isFileUsedByAsset(String fileId) {
+    try {
+      return genericStorage.isFileUsedByAsset(fileId);
+    } catch (IOException e) {
+      throw new UncheckedIOException("Could not check asset links for file " + fileId, e);
+    }
+  }
+
+  public void ensureFileIsUnused(String fileId) {
+    if (isFileUsedByAsset(fileId)) {
+      throw new FileInUseException(fileId);
     }
   }
 

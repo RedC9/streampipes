@@ -21,6 +21,7 @@ import org.apache.streampipes.audit.events.settings.SettingsAuditRecorder;
 import org.apache.streampipes.manager.file.FileManager;
 import org.apache.streampipes.model.file.FileMetadata;
 import org.apache.streampipes.model.message.Notifications;
+import org.apache.streampipes.resource.management.FileInUseException;
 import org.apache.streampipes.resource.management.ResourceDeletionManager;
 import org.apache.streampipes.resource.management.SpResourceManager;
 import org.apache.streampipes.rest.core.base.impl.AbstractAuthGuardedRestResource;
@@ -53,6 +54,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
 
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @RestController
@@ -107,10 +109,20 @@ public class FileResource extends AbstractAuthGuardedRestResource {
       fileManager.deleteFile(fileId, resourceDeletionManager);
       audit.fileDeleted(getAuthenticatedUserSid(), fileId);
       return ok();
+    } catch (FileInUseException e) {
+      audit.fileDeleteFailed(getAuthenticatedUserSid(), fileId);
+      throw new SpMessageException(CONFLICT, Notifications.error(e.getMessage()));
     } catch (RuntimeException e) {
       audit.fileDeleteFailed(getAuthenticatedUserSid(), fileId);
       throw e;
     }
+  }
+
+  @GetMapping(path = "/{fileId}/usage", produces = MediaType.APPLICATION_JSON_VALUE)
+  @Operation(summary = "Check whether a file is linked to an asset", tags = {"Core", "Files"})
+  @PreAuthorize(AuthConstants.HAS_READ_FILE_PRIVILEGE)
+  public ResponseEntity<Boolean> isFileUsedByAsset(@PathVariable("fileId") String fileId) {
+    return ok(resourceDeletionManager.isFileUsedByAsset(fileId));
   }
 
   @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)

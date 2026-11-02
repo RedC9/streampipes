@@ -99,6 +99,8 @@ public class ResetManagement {
 
     stopAndDeleteAllAdapters(workerRestClient, extensionsServiceStorage, requestManager);
 
+    removeAllAssets(username);
+
     deleteAllFiles();
 
     removeAllDataInDataLake();
@@ -106,8 +108,6 @@ public class ResetManagement {
     removeAllDataViewWidgets();
 
     removeAllDataViews();
-
-    removeAllAssets(username);
 
     removeAllPipelineTemplates();
 

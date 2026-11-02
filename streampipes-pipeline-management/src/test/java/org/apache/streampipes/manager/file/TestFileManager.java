@@ -19,6 +19,7 @@ package org.apache.streampipes.manager.file;
 
 import org.apache.streampipes.commons.file.FileHasher;
 import org.apache.streampipes.model.file.FileMetadata;
+import org.apache.streampipes.resource.management.FileInUseException;
 import org.apache.streampipes.resource.management.ResourceDeletionManager;
 import org.apache.streampipes.storage.api.system.IFileMetadataStorage;
 import org.apache.streampipes.storage.api.system.IGenericStorage;
@@ -32,6 +33,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -44,9 +46,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 public class TestFileManager {
@@ -217,6 +222,37 @@ public class TestFileManager {
 
     verify(fileHandler, times(0)).deleteFile(anyString());
     verify(fileMetadataStorage, times(0)).deleteElementById(id);
+  }
+
+  @Test
+  public void deleteFile_preservesFileAndMetadataWhenLinkedToAsset() throws IOException {
+    var id = "linkedFileId";
+    var metadata = new FileMetadata();
+    metadata.setFilename("linked.csv");
+    when(fileMetadataStorage.getElementById(id)).thenReturn(metadata);
+    var genericStorage = mock(IGenericStorage.class);
+    when(genericStorage.isFileUsedByAsset(id)).thenReturn(true);
+
+    assertThrows(FileInUseException.class,
+        () -> fileManager.deleteFile(id, new ResourceDeletionManager(genericStorage)));
+
+    verifyNoInteractions(fileHandler);
+    verify(fileMetadataStorage, never()).deleteElement(any());
+    verify(genericStorage, never()).deleteAssetLinkToResource(anyString());
+  }
+
+  @Test
+  public void deleteFile_preservesFileAndMetadataWhenUsageCheckFails() throws IOException {
+    var id = "fileId";
+    when(fileMetadataStorage.getElementById(id)).thenReturn(new FileMetadata());
+    var genericStorage = mock(IGenericStorage.class);
+    doThrow(new IOException("unavailable")).when(genericStorage).isFileUsedByAsset(id);
+
+    assertThrows(UncheckedIOException.class,
+        () -> fileManager.deleteFile(id, new ResourceDeletionManager(genericStorage)));
+
+    verifyNoInteractions(fileHandler);
+    verify(fileMetadataStorage, never()).deleteElement(any());
   }
 
   @Test

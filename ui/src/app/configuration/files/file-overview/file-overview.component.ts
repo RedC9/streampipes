@@ -35,7 +35,9 @@ import {
     ConfirmDialogComponent,
     SpLabelComponent,
     SpTableComponent,
+    SpTableNameSearchConfig,
 } from '@streampipes/shared-ui';
+import { HttpErrorResponse } from '@angular/common/http';
 import { MatDialog } from '@angular/material/dialog';
 import { saveAs } from 'file-saver';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -80,6 +82,11 @@ export class FileOverviewComponent implements OnInit {
     displayedColumns: string[] = ['filename', 'filetype', 'uploaded', 'action'];
 
     dataSource: MatTableDataSource<FileMetadata> = new MatTableDataSource();
+    readonly nameSearchConfig: SpTableNameSearchConfig<FileMetadata> = {
+        enabled: true,
+        placeholder: this.translateService.instant('Search files'),
+        searchKey: ['filename'],
+    };
     filesAvailable = false;
 
     private fileTypeColors: { [key: string]: string } = {};
@@ -96,6 +103,45 @@ export class FileOverviewComponent implements OnInit {
     }
 
     deleteFile(fileMetadata: FileMetadata) {
+        this.filesService.isFileUsedByAsset(fileMetadata.fileId).subscribe({
+            next: inUse => {
+                if (inUse) {
+                    this.showFileInUseWarning();
+                } else {
+                    this.confirmDeleteFile(fileMetadata);
+                }
+            },
+            error: () => this.showDeleteError(),
+        });
+    }
+
+    showDeleteError(): void {
+        this.dialog.open(ConfirmDialogComponent, {
+            width: '500px',
+            data: {
+                title: this.translateService.instant('Error'),
+                subtitle: this.translateService.instant(
+                    'Could not delete file. Please try again.',
+                ),
+                confirmTitle: this.translateService.instant('Ok'),
+            },
+        });
+    }
+
+    showFileInUseWarning(): void {
+        this.dialog.open(ConfirmDialogComponent, {
+            width: '500px',
+            data: {
+                title: this.translateService.instant('File is still in use'),
+                subtitle: this.translateService.instant(
+                    'To delete a file, please remove the file from all assets.',
+                ),
+                confirmTitle: this.translateService.instant('Ok'),
+            },
+        });
+    }
+
+    confirmDeleteFile(fileMetadata: FileMetadata) {
         const dialogRef = this.dialog.open(ConfirmDialogComponent, {
             width: '500px',
             data: {
@@ -112,11 +158,16 @@ export class FileOverviewComponent implements OnInit {
 
         dialogRef.afterClosed().subscribe(ev => {
             if (ev === 'confirm') {
-                this.filesService
-                    .deleteFile(fileMetadata.fileId)
-                    .subscribe(_response => {
-                        this.refreshFiles();
-                    });
+                this.filesService.deleteFile(fileMetadata.fileId).subscribe({
+                    next: () => this.refreshFiles(),
+                    error: (error: HttpErrorResponse) => {
+                        if (error.status === 409) {
+                            this.showFileInUseWarning();
+                        } else {
+                            this.showDeleteError();
+                        }
+                    },
+                });
             }
         });
     }
