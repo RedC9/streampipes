@@ -1,0 +1,28 @@
+
+name: Sync fork dev branch
+
+on:
+  schedule:
+    - cron: "0 8 * * *"
+      timezone: "Europe/Berlin"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout fork dev
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+
+      - name: Sync with upstream
+        run: |
+          git fetch https://github.com/apache/streampipes.git dev
+          git merge --ff-only FETCH_HEAD
+          git push origin dev
